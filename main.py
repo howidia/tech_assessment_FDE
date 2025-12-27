@@ -1,39 +1,87 @@
-
+import os
+import sys
 import cohere
 from dotenv import load_dotenv
-import os
 
-from src.config.agent_config import SYSTEM_PROMPT
-from src.config.tools_config import TOOLS_JSON
-from src.tools.subscription_data_tools import get_weather
+# Import your actual modules
+from src.tools.subscription_store import SubscriptionStore 
+from src.agents import TaskPlannerAgent, SubscriptionDataAssistantAgent 
+from src.agent_team import AgentTeam
+from config.agent_config import MODEL_ID
 
-# Load environment variables from .env file
-load_dotenv()
+def main():
+    # 0. Setup Environment
+    load_dotenv()
+    if not os.environ.get("COHERE_API_KEY"):
+        print("Error: COHERE_API_KEY not found in .env file.")
+        return
 
-# Initialize Cohere client with API key from environment variable
-co = cohere.ClientV2(
-    api_key=os.environ.get("COHERE_API_KEY")  # Gets the API key securely
-)
+    debug_mode = 'True' == os.environ.get("DEBUG_MODE", False)
 
-functions_map = {"get_weather": get_weather}
-
-messages = [
-    {"role": "system", "content": SYSTEM_PROMPT},
-    {"role": "user", "content": "What's the weather in Toronto?"},
-]
-
-
-response = co.chat(
-    model="command-a-03-2025", messages=messages, tools=TOOLS_JSON
-)
-
-if response.message.tool_calls:
-    messages.append(
-        {
-            "role": "assistant",
-            "tool_plan": response.message.tool_plan,
-            "tool_calls": response.message.tool_calls,
-        }
+    co = cohere.ClientV2(api_key=os.environ["COHERE_API_KEY"])
+    
+    # 1. Initialize the Infrastructure (Database)
+    print("Initializing Database...")
+    store = SubscriptionStore("data/subscription_data.csv")
+    
+    # 2. Initialize the Workers
+    # Note: We pass the SYSTEM PROMPT here so the agent knows the SQL rules
+    data_agent = SubscriptionDataAssistantAgent(
+        client=co,
+        model_id=MODEL_ID,
+        tools_json=store.get_tool_schemas(),
+        functions_map=store.get_tools(),
+        debug_mode=debug_mode
     )
-    print(response.message.tool_plan, "\n")
-    print(response.message.tool_calls)
+
+    # 3. Create the Team
+    team = AgentTeam()
+    team.register_agent(
+        name="DataAnalyst",
+        agent=data_agent,
+        description="Can query the SQL database for revenue, churn, and subscription details."
+    )
+    
+    # 4. Initialize the Boss (Planner)
+    planner = TaskPlannerAgent(
+        client=co, 
+        model_id=MODEL_ID, 
+        team=team,
+        debug_mode=debug_mode
+    )
+
+    # 5. Interactive Loop
+    print("\n" + "="*50)
+    print("🤖 Agent Team Ready. Type -1 to exit.")
+    print("="*50 + "\n")
+
+    while True:
+        try:
+            # Get User Input
+            user_input = input("\nUser Request: ").strip()
+            
+            # Check Termination Condition
+            if user_input == "-1" or user_input.lower() in ["exit", "quit"]:
+                print("Terminating session. Goodbye!")
+                break
+            
+            if not user_input:
+                continue
+
+            # Run the Agent
+            result = planner.run(user_input)
+            
+            # Display Result
+            print("\n--------------- Agent Response ---------------")
+            print(result)
+            print("----------------------------------------------")
+
+        except KeyboardInterrupt:
+            # Handle Ctrl+C gracefully
+            print("\n\nForced Exit. Goodbye!")
+            sys.exit(0)
+        except Exception as e:
+            print(f"\n❌ An error occurred: {str(e)}")
+
+if __name__ == "__main__":
+    main()
