@@ -4,7 +4,7 @@
 
 This repository contains an Agentic AI solution designed to answer complex sales and business queries based on subscription data.
 
-![Agent Architecture Diagram](docs/AgentStructure.png)
+![Agent Architecture Diagram](docs/agent_flowchart.png)
 
 The system implements a **Supervisor-Worker (Hierarchical) Architecture** to ensure accuracy, safety, and scalability:
 
