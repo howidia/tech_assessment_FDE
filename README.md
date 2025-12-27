@@ -1,9 +1,3 @@
-I cannot create a downloadable file attachment directly. However, I can provide the `README.md` content in a raw, unformatted text block that you can easily copy and paste into a file named `README.md` on your machine.
-
-Here is the raw content. Copy everything between the lines below:
-
----
-
 # Cohere Forward Deployed Engineer Assessment
 
 ## 🚀 Overview
