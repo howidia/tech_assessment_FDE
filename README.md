@@ -100,7 +100,7 @@ python main.py
 ```
 
 * **Type your query** (e.g., "Which customers are at risk of churning?").
-* **Type `-1**` to exit the session.
+* **Type `-1`** to exit the session.
 
 ### 2. Run Evaluation Pipeline (Automated Testing)
 
