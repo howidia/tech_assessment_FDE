@@ -44,10 +44,10 @@ I implemented a dual-layer safety mechanism:
 To ensure the system is production-ready, I built a rigorous evaluation pipeline (`evaluate.py`) centered on **Reproducibility** and **Nuance**.
 
 ### Methodology: LLM-as-a-Judge
-Manual inspection is unscalable. I used a high-performance model (`command-r-plus`) to grade the agent's outputs against a "Golden Answer" dataset.
+Manual inspection is unscalable. I used Cohere's high-performance model (`command-r-plus`) to grade the agent's outputs against a "Golden Answer" dataset. (Important to note this is the same model that writes the output).
 
 ### Metrics
-1.  **Stability (Consistency Score):** LLMs are non-deterministic. A single correct answer can be luck. I run every test case **3 times (Replications)**. A test case is only considered "Stable" if it passes 3/3 times.
+1.  **Stability (Consistency Score):** LLMs are non-deterministic. A single correct answer can be luck. I run every test case **3 times (Replications)**. A test case is only considered "Stable" if it passes 3/3 times. There was not a significant reason to restrict it to 3 replications, ideally a larger sample could be more informative (Cohere's trial API is limited in useage)
 2.  **Correctness (0/1):** Binary assessment of factual accuracy and refusal of invalid requests.
 3.  **Quality (1-5):** Qualitative assessment of tone, context, and formatting.
 
@@ -60,7 +60,7 @@ Manual inspection is unscalable. I used a high-performance model (`command-r-plu
 ### Key Findings
 * **Gold Standard Bias:** The LLM-as-a-Judge tends to penalize answers that are correct but phrased differently than the Golden Answer. Future evaluations should use semantic similarity embeddings rather than pure LLM grading.
 * **Contextual Limits:** The current agent struggles to "go above and beyond" (e.g., adding unrequested but helpful context) without explicit instruction. This suggests a need for a dedicated "Enrichment Agent."
-* **Prompt Efficacy:** The single most effective optimization was **Business Logic Injection**. Explicitly defining "Risk" in the prompt moved accuracy on those queries from ~40% (hallucinated definitions) to 100%.
+* **Prompt Efficacy:** The single most effective optimization was **Business Logic Injection**. Explicitly defining "Risk" in the prompt improved accuracy on those queries.
 
 ### Trade-offs
 * **Latency vs. Reliability:** The Supervisor-Worker pattern introduces a "thinking" step, doubling the token cost and latency compared to a single agent. I accepted this trade-off to prioritize **Safety** and **Accuracy**, which are non-negotiable in enterprise finance/sales settings.
