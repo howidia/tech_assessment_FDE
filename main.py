@@ -1,9 +1,16 @@
+"""
+Main Entry Point for the Subscription Agent System.
+
+This script bootstraps the entire agent architecture, initializing the
+subscription store, worker agents, and the task planner. It provides an
+interactive command-line interface (CLI) for users to query the system.
+"""
+
 import os
 import sys
 import cohere
 from dotenv import load_dotenv
 
-# Import your actual modules
 from src.tools.subscription_store import SubscriptionStore 
 from src.agents import TaskPlannerAgent, SubscriptionDataAssistantAgent 
 from src.agent_team import AgentTeam
@@ -25,7 +32,6 @@ def main():
     store = SubscriptionStore("data/subscription_data.csv")
     
     # 2. Initialize the Workers
-    # Note: We pass the SYSTEM PROMPT here so the agent knows the SQL rules
     data_agent = SubscriptionDataAssistantAgent(
         client=co,
         model_id=MODEL_ID,
@@ -42,7 +48,7 @@ def main():
         description="Can query the SQL database for revenue, churn, and subscription details."
     )
     
-    # 4. Initialize the Boss (Planner)
+    # 4. Initialize the Planner
     planner = TaskPlannerAgent(
         client=co, 
         model_id=MODEL_ID, 

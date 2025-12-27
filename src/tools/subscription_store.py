@@ -1,19 +1,49 @@
+"""
+Subscription Store Module.
+
+This module provides the SubscriptionStore class, which serves as an in-memory
+SQLite database for subscription data. It handles data ingestion from CSV,
+schema definition, and exposes secure SQL query tools for agent interaction.
+"""
+
 import sqlite3
 import csv
 from typing import List, Dict, Any, Optional, Callable
 
 from config.tools_config import SUBSCRIPTION_STORE_TOOLS_JSON
 
+
 class SubscriptionStore:
+    """
+    In-memory SQLite store for subscription data.
+
+    This class ingests a CSV file into a temporary SQLite database and provides
+    methods to retrieve tool schemas and execute SQL queries securely.
+    """
     def __init__(self, csv_path: str):
-        # Using check_same_thread=False allows this to work in multi-threaded web frameworks
+        """
+        Initialize the SubscriptionStore.
+
+        Args:
+            csv_path (str): The file path to the subscription data CSV.
+        """
+        # Using check_same_thread=False could allow this to work in multi-threaded web frameworks
         self.connection = sqlite3.connect(":memory:", check_same_thread=False)
         self.connection.row_factory = sqlite3.Row
         self._init_db(csv_path)
 
     def _init_db(self, csv_path: str):
+        """
+        Initialize the database schema and ingest data from the CSV file.
+
+        Args:
+            csv_path (str): The file path to the subscription data CSV.
+
+        Raises:
+            FileNotFoundError: If the specified CSV file cannot be found.
+        """
         cursor = self.connection.cursor()
-        
+
         # 1. Define Schema
         cursor.execute("""
             CREATE TABLE subscriptions (
@@ -75,8 +105,11 @@ class SubscriptionStore:
 
     def get_tools(self) -> Dict[str, Callable]:
         """
-        Returns a dictionary mapping tool names to their callable implementations.
-        Used by the agent executor to run the tool requested by Cohere.
+        Get the mapping of tool names to their implementation functions.
+
+        Returns:
+            Dict[str, Callable]: A dictionary where keys are tool names and
+            values are the corresponding methods.
         """
         return {
             "get_database_schema": self.get_database_schema,
@@ -85,15 +118,20 @@ class SubscriptionStore:
 
     def get_tool_schemas(self) -> List[Dict[str, Any]]:
         """
-        Returns the list of tool definitions in the format Cohere expects.
-        Pass this to the `tools` parameter in co.chat().
+        Get the JSON schemas for the tools exposed by this store.
+
+        Returns:
+            List[Dict[str, Any]]: A list of tool definitions compatible with
+            the Cohere API.
         """
         return SUBSCRIPTION_STORE_TOOLS_JSON
 
     def get_database_schema(self) -> str:
         """
-        Returns a text description of the table. 
-        Crucial for the agent to know column names (e.g. 'monthly_revenue' vs 'revenue').
+        Retrieve the schema definition of the subscriptions table.
+
+        Returns:
+            str: A formatted string listing the table name and its columns.
         """
         cursor = self.connection.execute("PRAGMA table_info(subscriptions)")
         columns = [row['name'] for row in cursor.fetchall()]
@@ -101,7 +139,14 @@ class SubscriptionStore:
 
     def run_sql_query(self, query: str) -> List[Dict[str, Any]]:
         """
-        The single, powerful interface for all data retrieval.
+        Execute a read-only SQL query against the database.
+
+        Args:
+            query (str): The SQL query string to execute.
+
+        Returns:
+            List[Dict[str, Any]]: A list of records resulting from the query,
+            or a list containing an error dictionary if the query fails or is forbidden.
         """
         # 1. Safety Block
         forbidden = ["DELETE", "DROP", "UPDATE", "INSERT", "ALTER"]
@@ -113,5 +158,5 @@ class SubscriptionStore:
             cursor = self.connection.execute(query)
             return [dict(row) for row in cursor.fetchall()]
         except sqlite3.Error as e:
-            # Return the error text so the Agent can self-correct!
+            # Return the error text so the Agent can self-correct
             return [{"error": f"SQL Syntax Error: {str(e)}"}]
