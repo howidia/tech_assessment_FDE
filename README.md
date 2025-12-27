@@ -127,4 +127,4 @@ After running `evaluate.py`, check the `reports/` folder:
 * **`evaluation_report.csv`**: A detailed dataset containing every replication, duration metrics, and full judge reasoning. Use this for deep-dive analysis.
 
 ---
-Please refer to `FINDINGS.md` for detailed report regarding the prompt engineering approach, evaluation design, metrics and iteration details.
+Please refer to `FINDINGS.md` for a detailed report regarding the prompt engineering approach, evaluation design, metrics and iteration details.
