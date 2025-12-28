@@ -7,7 +7,7 @@
 
 ## Detailed Breakdown
 
-### kT How many customers are currently on the Enterprise plan?
+### 🟡 How many customers are currently on the Enterprise plan?
 **Pass Rate:** 33% | **Avg Quality:** 0.3/5
 
 **Criteria:** _Should correctly count all subscriptions with plan_tier='Enterprise' (6 total)_
@@ -91,7 +91,7 @@
 | 3 | ✅ | ⭐⭐⭐ (3) | 7.37s | There are 2 customers pending renewal and their total outstanding balance is $40... | The answer correctly identifies the number of customers pending renewal and their total outstanding balance, which aligns with the criteria. However, it lacks the detailed breakdown of the outstanding balance ($18,000 + $22,000) and the specific customer names (Legal Partners LLP and City Hospital Network) that are present in the Golden Answer. This omission reduces the quality score from a perfect 5 to a 3, as it misses important context and detail. |
 
 ---
-### kT Which Technology companies are we working with and what are their plan tiers?
+### 🟡 Which Technology companies are we working with and what are their plan tiers?
 **Pass Rate:** 67% | **Avg Quality:** 2.7/5
 
 **Criteria:** _Should filter industry='Technology' and return all 4 with their plan tiers_
