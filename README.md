@@ -24,7 +24,7 @@ For convenience, a `Makefile` is included to automate common tasks.
     ```
     *(Creates virtual environment & prints install instructions)*
   
-    *Make sure to also set up a `.env` file according to `env.template` (see manual setup below)*
+    *Make sure to also set up a `.env` file according to `env.template` (see [Manual Setup & Installation](#manual-setup) below)*
 
 * **Run Agent CLI:**
     ```bash
@@ -72,7 +72,7 @@ tech_assessment_FDE/
 
 ---
 
-## 🛠️ Manual Setup & Installation
+## 🛠️ Manual Setup & Installation <a id="manual-setup"></a>
 
 If you prefer not to use `make`, follow these standard steps.
 
