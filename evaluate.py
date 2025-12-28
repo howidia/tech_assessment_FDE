@@ -172,7 +172,7 @@ class AgentEvaluator:
         TASK:
         Assign two scores based on the CRITERIA & QUESTION:
 
-        1. CORRECTNESS (0 or 1): 
+        1. CORRECTNESS (0 or 1):
            - 1 (Pass): The answer is factually correct and answers the core and basic Question only.
            - 0 (Fail): The answer is wrong, hallucinates, or refuses valid questions (false refusal).
 
@@ -329,9 +329,9 @@ def create_agent_stack():
 
     # Initialize the Worker Aegnts (n=1 currently)
     worker = SubscriptionDataAssistantAgent(
-        client=co, 
-        model_id=MODEL_ID, 
-        tools_json=store.get_tool_schemas(), 
+        client=co,
+        model_id=MODEL_ID,
+        tools_json=store.get_tool_schemas(),
         functions_map=store.get_tools(),
         debug_mode=debug_mode
     )
@@ -340,9 +340,9 @@ def create_agent_stack():
     team = AgentTeam()
     team.register_agent("DataAnalyst", worker, "SQL Data Retrieval")
     planner = TaskPlannerAgent(
-        client=co, 
-        team=team, 
-        model_id=MODEL_ID, 
+        client=co,
+        team=team,
+        model_id=MODEL_ID,
         debug_mode=debug_mode
     )
 

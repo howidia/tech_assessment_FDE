@@ -11,8 +11,8 @@ import sys
 import cohere
 from dotenv import load_dotenv
 
-from src.tools.subscription_store import SubscriptionStore 
-from src.agents import TaskPlannerAgent, SubscriptionDataAssistantAgent 
+from src.tools.subscription_store import SubscriptionStore
+from src.agents import TaskPlannerAgent, SubscriptionDataAssistantAgent
 from src.agent_team import AgentTeam
 from config.agent_config import MODEL_ID
 
@@ -51,8 +51,8 @@ def main():
 
     # Initialize the Task Planner Agent
     planner = TaskPlannerAgent(
-        client=co, 
-        model_id=MODEL_ID, 
+        client=co,
+        model_id=MODEL_ID,
         team=team,
         debug_mode=debug_mode
     )
