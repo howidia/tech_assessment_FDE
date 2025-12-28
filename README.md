@@ -23,6 +23,7 @@ For convenience, a `Makefile` is included to automate common tasks.
     make setup
     ```
     *(Creates virtual environment & prints install instructions)*
+    *Make sure to also set up a `.env` file according to `env.template` (see manual setup below)*
 
 * **Run Agent CLI:**
     ```bash
