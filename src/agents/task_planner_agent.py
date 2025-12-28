@@ -28,7 +28,7 @@ class TaskPlannerAgent:
         client: cohere.ClientV2, 
         team: AgentTeam, 
         model_id: str,
-        system_prompt_template: str = TASK_PLANNER_SYSTEM_PROMPT, # Default to config
+        system_prompt_template: str = TASK_PLANNER_SYSTEM_PROMPT,  # Default to config
         debug_mode: bool = False
     ):
         """
@@ -44,7 +44,7 @@ class TaskPlannerAgent:
         self.client = client
         self.team = team
         self.model_id = model_id
-        
+
         # Inject the dynamic manifest into the static template
         manifest = self.team.get_team_manifest()
         self.system_prompt = system_prompt_template.format(team_manifest=manifest)
@@ -95,12 +95,12 @@ class TaskPlannerAgent:
                             task=args["task"]
                         )
                         self._submit_tool_output(tc.id, result)
-                
+
                 step += 1
             else:
                 # If the model outputs without calling a tool, return that text
                 return response.message.content[0].text
-        
+
         return "Error: specific task planner max steps reached."
 
     def _execute_delegation(self, agent_name: str, task: str) -> str:
@@ -119,17 +119,17 @@ class TaskPlannerAgent:
         """
         if self.debug_mode:
             print(f"  → [Planner] Delegating to '{agent_name}': {task}")
-        
+
         try:
             # Get the agent from the team registry
             worker = self.team.get_agent(agent_name)
-            
+
             # Run the agent, the worker does its own thinking and returns a string
             worker_response = worker.run(task)
-            
+
             # Return the result to the Planner
             return f"Agent '{agent_name}' reported: {worker_response}"
-            
+
         except ValueError:
             return f"Error: Agent '{agent_name}' does not exist. Check your team manifest."
         except Exception as e:

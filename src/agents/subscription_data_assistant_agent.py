@@ -76,16 +76,16 @@ class SubscriptionDataAssistantAgent:
 
             # Add Assistant's output to history
             self.messages.append(response.message)
-            
+
             # Check for Tool Calls
             if response.message.tool_calls:
                 if self.debug_mode:
                     print(f" > Step {step+1}: Agent requested {len(response.message.tool_calls)} tool(s).")
-                
+
                 # Execute all requested tools
                 for tool_call in response.message.tool_calls:
                     self._execute_tool(tool_call)
-                
+
                 # The loop continues automatically to the next iteration
             else:
                 # If no tools are called, the agent is done

@@ -8,7 +8,7 @@ schema definition, and exposes secure SQL query tools for agent interaction.
 
 import sqlite3
 import csv
-from typing import List, Dict, Any, Optional, Callable
+from typing import List, Dict, Any, Callable
 
 from config.tools_config import SUBSCRIPTION_STORE_TOOLS_JSON
 

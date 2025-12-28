@@ -31,6 +31,7 @@ load_dotenv()
 COHERE_API_KEY = os.environ.get("COHERE_API_KEY")
 JUDGE_MODEL_ID = MODEL_ID  # Using the same model for judging
 
+
 class AgentEvaluator:
     """
     Evaluator class that runs the agent against test cases and grades the results.
@@ -61,7 +62,7 @@ class AgentEvaluator:
             data = json.load(f)["data"]
 
         summary_results = []
-        
+
         print(f"Starting Evaluation on {len(data)} test cases with {replications} replications each...")
 
         # Main Loop
@@ -69,7 +70,7 @@ class AgentEvaluator:
             question = item["question"]
             golden_answer = item["golden_answer"]
             criteria = item.get("evaluation_criteria", "N/A")
-            
+
             total_correctness = 0
             total_quality = 0
             replication_details = []
@@ -77,24 +78,25 @@ class AgentEvaluator:
             for i in range(replications):
                 # New agent per run
                 agent = self.agent_factory()
-                
+
                 # Run Agent
                 try:
                     start_time = time.time()
                     actual_answer = self._safe_agent_run(agent, question)
                     duration = time.time() - start_time
                     # When api limit is reached, deduct 61 seconds that we froze for
-                    if duration > 61: duration -= 61  
+                    if duration > 61:
+                        duration -= 61
                 except Exception as e:
                     actual_answer = f"ERROR: {str(e)}"
                     duration = 0
 
                 # Judge Answer
                 correctness, quality, reasoning = self._judge_answer(question, golden_answer, actual_answer, criteria)
-                
+
                 total_correctness += correctness
                 total_quality += quality
-                
+
                 replication_details.append({
                     "rep": i + 1,
                     "answer": actual_answer,
@@ -103,12 +105,12 @@ class AgentEvaluator:
                     "reasoning": reasoning,
                     "duration_sec": round(duration, 2)
                 })
-            
+
             # Calculate Averages
             avg_quality = total_quality / replications
             pass_rate = (total_correctness / replications) * 100
             is_stable = (pass_rate == 100)
-            
+
             summary_results.append({
                 "question": question,
                 "golden_answer": golden_answer,
@@ -139,7 +141,7 @@ class AgentEvaluator:
                 return agent.run(question)
             except Exception as e:
                 if "You are using a Trial key, which is limited to" in str(e):
-                    print(f"\n⏳ Rate limit hit during Agent Run. Sleeping for 61s... (Attempt {attempt+1}/{max_retries})")
+                    print(f"\n⏳ Rate limit hit during Agent Run. Sleeping for 61s; (Attempt {attempt+1}/{max_retries})")
                     time.sleep(61)
                     agent = self.agent_factory()
                     continue
@@ -161,30 +163,30 @@ class AgentEvaluator:
         """
         prompt = f"""
         You are an expert evaluator grading an AI Agent.
-        
+
         QUESTION: {question}
         GOLDEN ANSWER: {golden}
         CRITERIA: {criteria}
         ACTUAL ANSWER: {actual}
-        
+
         TASK:
         Assign two scores based on the CRITERIA & QUESTION:
-        
+
         1. CORRECTNESS (0 or 1): 
            - 1 (Pass): The answer is factually correct and answers the core and basic Question only.
            - 0 (Fail): The answer is wrong, hallucinates, or refuses valid questions (false refusal).
-        
+
         2. QUALITY (0 to 5):
            - 5: Perfect. Matches the Golden Answer in detail, tone, and formatting.
            - 4: Great. Correct info, minor style differences.
            - 3: Good. Correct info, but missing context or slightly verbose.
            - 1: Bare Minimum. Technically correct but very poor presentation (e.g. just a number).
            - 0: Incorrect. (If Correctness is 0, Quality must be 0).
-        
+
         OUTPUT JSON ONLY:
         {{"correctness": <int>, "quality": <int>, "reasoning": "<string>"}}
         """
-        
+
         max_retries = 3
         for attempt in range(max_retries + 1):
             try:
@@ -202,7 +204,7 @@ class AgentEvaluator:
                                 "quality": {"type": "integer"},
                                 "reasoning": {"type": "string"}
                                 },
-                        "required": ["correctness", "quality", "reasoning"]
+                            "required": ["correctness", "quality", "reasoning"]
                         }
                     }
                 )
@@ -211,19 +213,19 @@ class AgentEvaluator:
                 start = content.find('{')
                 end = content.rfind('}') + 1
                 data = json.loads(content[start:end])
-                
+
                 return data["correctness"], data["quality"], data["reasoning"]
-            
+
             except Exception as e:
                 # Check for Rate Limit Error
                 if "You are using a Trial key, which is limited to" in str(e):
-                    print(f"\n⏳ Rate limit hit during Judging. Sleeping for 61s... (Attempt {attempt+1}/{max_retries})")
+                    print(f"\n⏳ Rate limit hit during Judging. Sleeping for 61s; (Attempt {attempt+1}/{max_retries})")
                     time.sleep(61)
                     continue
-                
+
                 # If it's another error (like JSON parsing), return 0s
                 return 0, 0, f"Judge Error: {str(e)}"
-        
+
         return 0, 0, "Judge Rate Limit Exceeded"
 
     def _save_report(self, summaries: List[Dict], filename: str, replications: int):
@@ -282,22 +284,22 @@ class AgentEvaluator:
         total_questions = len(summaries)
         perfect_stability = sum(1 for s in summaries if s['is_stable'])
         avg_quality = sum(s['avg_quality'] for s in summaries) / total_questions
-        
+
         with open(filename, "w", encoding='utf-8') as f:
-            f.write(f"# 🛡️ Agent Consistency & Quality Report\n\n")
+            f.write("# 🛡️ Agent Consistency & Quality Report\n\n")
             f.write(f"- **Total Questions:** {total_questions}\n")
             f.write(f"- **Replications per Question:** {replications}\n")
             f.write(f"- **Perfect Stability (100% Pass):** {perfect_stability}/{total_questions}\n")
             f.write(f"- **Average Quality Score:** {avg_quality:.2f} / 5.0\n\n")
-            
+
             f.write("## Detailed Breakdown\n\n")
-            
+
             for item in summaries:
                 icon = "🟢" if item['is_stable'] else "🟡" if item['pass_rate'] > 0 else "🔴"
                 f.write(f"### {icon} {item['question']}\n")
                 f.write(f"**Pass Rate:** {item['pass_rate']:.0f}% | **Avg Quality:** {item['avg_quality']:.1f}/5\n\n")
                 f.write(f"**Criteria:** _{item['criteria']}_\n\n")
-                
+
                 f.write("| Rep | Pass | Quality | Duration | Answer | Judge Reasoning |\n")
                 f.write("|---|---|---|---|---|---|\n")
                 for rep in item['details']:
@@ -305,10 +307,12 @@ class AgentEvaluator:
                     qual_stars = "⭐" * rep['quality']
                     # Truncate answer slightly for table readability
                     short_ans = str(rep['answer']).replace("\n", " ")[:80] + "..."
-                    f.write(f"| {rep['rep']} | {rep_icon} | {qual_stars} ({rep['quality']}) | {rep['duration_sec']}s | {short_ans} | {rep['reasoning']} |\n")
+                    f.write((f"| {rep['rep']} | {rep_icon} | {qual_stars} ({rep['quality']}) | {rep['duration_sec']}s"
+                             f" | {short_ans} | {rep['reasoning']} |\n"))
                 f.write("\n---\n")
-        
+
         print(f"\nEvaluation Complete! Report saved to {filename}")
+
 
 def create_agent_stack():
     """
@@ -322,7 +326,7 @@ def create_agent_stack():
 
     # Initialize the Infrastructure (Database)
     store = SubscriptionStore("data/subscription_data.csv")
-    
+
     # Initialize the Worker Aegnts (n=1 currently)
     worker = SubscriptionDataAssistantAgent(
         client=co, 
@@ -331,7 +335,7 @@ def create_agent_stack():
         functions_map=store.get_tools(),
         debug_mode=debug_mode
     )
-    
+
     # Create the Agent Team and give to the Planner Agent
     team = AgentTeam()
     team.register_agent("DataAnalyst", worker, "SQL Data Retrieval")
@@ -341,8 +345,9 @@ def create_agent_stack():
         model_id=MODEL_ID, 
         debug_mode=debug_mode
     )
-    
+
     return planner
+
 
 if __name__ == "__main__":
     if not COHERE_API_KEY:
@@ -357,10 +362,10 @@ if __name__ == "__main__":
     report_path = os.path.join(OUTPUT_DIR, "evaluation_report.md")
 
     co_client = cohere.ClientV2(api_key=COHERE_API_KEY)
-    
+
     # Initialize Evaluator
     evaluator = AgentEvaluator(create_agent_stack, co_client)
-    
+
     # Run with explicit output path
     print(f"Running evaluation... Results will be saved to {OUTPUT_DIR}/")
     evaluator.run_evaluation(
