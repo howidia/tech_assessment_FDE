@@ -171,8 +171,7 @@ class AgentEvaluator:
         Assign two scores based on the CRITERIA & QUESTION:
         
         1. CORRECTNESS (0 or 1): 
-           - 1 (Pass): The answer is factually correct and answers the core and basic Question
-                        (does not need to go above and beyond).
+           - 1 (Pass): The answer is factually correct and answers the core and basic Question only.
            - 0 (Fail): The answer is wrong, hallucinates, or refuses valid questions (false refusal).
         
         2. QUALITY (0 to 5):
@@ -189,12 +188,24 @@ class AgentEvaluator:
         max_retries = 3
         for attempt in range(max_retries + 1):
             try:
+                # Use Cohere-defined response schema to guarantee valid JSON
                 response = self.client.chat(
                     model=JUDGE_MODEL_ID,
                     messages=[{"role": "user", "content": prompt}],
-                    temperature=0
+                    temperature=0,
+                    response_format={
+                        "type": "json_object",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "correctness": {"type": "integer"},
+                                "quality": {"type": "integer"},
+                                "reasoning": {"type": "string"}
+                                },
+                        "required": ["correctness", "quality", "reasoning"]
+                        }
+                    }
                 )
-                
                 content = response.message.content[0].text
                 # Robust JSON cleaning
                 start = content.find('{')

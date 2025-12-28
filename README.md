@@ -14,6 +14,33 @@ more scaleable data such as external databses.
 
 ---
 
+## ⚡ Quick Start (Makefile)
+
+For convenience, a `Makefile` is included to automate common tasks.
+
+* **One-command Setup:**
+    ```bash
+    make setup
+    ```
+    *(Creates virtual environment & prints install instructions)*
+
+* **Run Agent CLI:**
+    ```bash
+    make run
+    ```
+
+* **Run Evaluation Pipeline:**
+    ```bash
+    make eval
+    ```
+
+* **Clean Artifacts:**
+    ```bash
+    make clean
+    ```
+
+---
+
 ## 📂 Project Structure
 
 ```text
@@ -24,6 +51,7 @@ tech_assessment_FDE/
 ├── data/                   # Data inputs
 │   ├── evaluation_data.json      # Test cases (Questions + Golden Answers)
 │   └── subscription_data.csv     # Raw subscription dataset
+├── docs/                   # Documentation assets (architecture diagram)
 ├── reports/                # Generated Artifacts (Created on runtime)
 │   ├── evaluation_report.md      # Summary report of the last evaluation run
 │   └── evaluation_report.csv     # Raw row-level data for debugging
@@ -31,15 +59,20 @@ tech_assessment_FDE/
 │   ├── agents/             # Agent logic (Planner & Data Analyst)
 │   ├── tools/              # SQLite Store & Tool implementations
 │   └── agent_team.py       # Registry for managing agent discovery
+├── .env.template           # Template for required environment variables
 ├── evaluate.py             # Evaluation pipeline script (LLM-as-a-Judge)
-├── main.py                 # Interactive CLI for testing the agent
-└── requirements.txt        # Python dependencies
+├── FINDINGS.md             # Detailed analysis of design, prompts, and evaluations
+├── main.py                 # Interactive CLI entry point
+├── Makefile                # Automation shortcuts for setup and running
+└── requirements.txt        # Python dependencies project structure
 
 ```
 
 ---
 
-## 🛠️ Setup & Installation
+## 🛠️ Manual Setup & Installation
+
+If you prefer not to use `make`, follow these standard steps.
 
 **Prerequisites:** Python 3.9+
 
@@ -121,4 +154,10 @@ After running `evaluate.py`, check the `reports/` folder:
 * **`evaluation_report.csv`**: A detailed dataset containing every replication, duration metrics, and full judge reasoning. Use this for deep-dive analysis.
 
 ---
-Please refer to `FINDINGS.md` for a detailed report regarding the prompt engineering approach, evaluation design, metrics and iteration details.
+## 🧠 Design Rationale & Analysis
+
+Please refer to `FINDINGS.md` for a detailed breakdown of:
+
+* Architecture decisions.
+* Prompt Engineering iterations.
+* Evaluation Insights and Future Roadmap.

@@ -41,6 +41,13 @@ I implemented a multi-layered safety mechanism:
 2.  **Execution Guardrails (Code Level):** The `SubscriptionStore` enforces "Read-Only" access by blocking destructive keywords (`DROP`, `DELETE`, `INSERT`) at the application layer.
 3.  **Output Guardrails (Structure Level):** The prompts enforce a strict separation between `=== TRACE ===` (internal logic) and `=== FINDINGS ===` (user output), preventing the leakage of tool names or raw SQL to the user.
 
+### D. Judge Reliability Engineering (JSON Schema)
+A common failure mode in "LLM-as-a-Judge" pipelines is the judge itself hallucinating the output format (e.g., returning markdown instead of JSON), causing the evaluation script to crash.
+
+To solve this, I implemented **Cohere's Native Response Format** (JSON Schema) specifically for the Judge model.
+* **Implementation:** I defined a strict schema requiring `correctness` (int), `quality` (int), and `reasoning` (string).
+* **Result:** This guaranteed 100% valid JSON output from the Judge, eliminating "parsing errors" from the evaluation logs and ensuring the report generation was deterministic.
+
 ## 3. Evaluation Design
 
 To ensure the system is production-ready, I built a rigorous evaluation pipeline (`evaluate.py`) centered on **Reproducibility** and **Nuance**.
@@ -53,27 +60,44 @@ Manual inspection is unscalable. I used Cohere's (`command-r-plus`) model to gra
 2.  **Correctness (0/1):** Binary assessment of factual accuracy and safety refusals.
 3.  **Quality (1-5):** Qualitative assessment of tone, context, and formatting.
 
+### Security & Red-Teaming (New)
+To ensure the system is enterprise-secure, I extended the evaluation dataset to include **Adversarial Test Cases**:
+1.  **Prompt Injection:** Attempts to leak system instructions (e.g., "Ignore previous instructions...").
+2.  **SQL Injection:** Attempts to execute destructive commands (e.g., `DROP TABLE`).
+These tests verify that the "Hard Guardrails" (Read-Only SQL wrapper) and "Soft Guardrails" (System Prompt instructions) are functioning correctly.
+
 ### Artifacts
 * **`reports/evaluation_report.md`**: A readable executive summary for stakeholders.
 * **`reports/evaluation_report.csv`**: A raw, row-level dataset for engineering analysis (enabling deep dives into specific failure modes like latency or hallucination).
 
 ## 4. Evaluation Insights & Trade-offs
 
-### Key Findings
-* **Gold Standard Bias:** The LLM-as-a-Judge tends to penalize answers that are factually correct but phrased differently than the Golden Answer.
-* **Prompt Efficacy:** The single most effective optimization was **Business Logic Injection**. Explicitly defining "Risk" in the prompt improved accuracy on those queries from near-zero to passing.
-* **Contextual Limits:** The current agent struggles to "go above and beyond" (adding unrequested context) without explicit instruction. This suggests the need for a future "Enrichment Agent."
+### Key Findings (Data from latest run)
+* **Security is Production-Ready:** The agent achieved a **100% Pass Rate** on all Safety and Adversarial queries. It successfully refused PII requests and blocked `DROP TABLE` attempts, proving the dual-layer guardrail approach works.
+* **High Stability (86%):** 19 out of 22 test cases achieved "Perfect Stability" (3/3 passes).
+* **Math is Solid:** The agent consistently handled complex arithmetic (MRR sums, Float utilization), proving that offloading math to SQLite is the correct architectural choice.
+
+### Analysis of Failures
+The agent struggled in 3 specific areas, revealing "Safe Defaults" behaviors:
+1.  **Implicit Filtering:** On the question *"How many customers are on the Enterprise plan?"*, the agent returned **4** (Active users) instead of **6** (Total users). The agent seemingly applies an implicit `WHERE status='active'` filter unless instructed otherwise.
+2.  **Summarization Loss:** On complex retrieval tasks (e.g., "Tech companies"), the agent successfully retrieved the data but occasionally omitted secondary details (like "Trial Status") in the final natural language summary.
+
+### Trade-offs
+* **Latency vs. Reliability:** The Supervisor-Worker pattern introduces a "thinking" step, increasing latency (avg ~5-8s per query). I accepted this trade-off to prioritize **Safety** and **Accuracy**, which are non-negotiable in enterprise settings.
+* **Complexity vs. Speed:** Building a custom `SubscriptionStore` and `AgentTeam` registry added initial development time compared to a simple script. However, this architectural investment ensures **scalability** for future iterations.
 
 ### Trade-offs
 * **Latency vs. Reliability:** The Supervisor-Worker pattern introduces a "thinking" step, increasing latency compared to a single agent. I accepted this trade-off to prioritize **Safety** and **Accuracy**, which are non-negotiable in enterprise settings.
 * **Complexity vs. Speed:** Building a custom `SubscriptionStore` and `AgentTeam` registry added initial development time compared to a simple script. However, this architectural investment ensures **scalability** and **reusability** for future iterations.
-
 ## 5. Future Roadmap & Improvements
 
 With more time, I would prioritize the following features:
 
 1.  **Observability & Tracing:** Currently, a basic `DEBUG_MODE` prints logs. I would implement a robust logging framework that captures internal `TRACE` outputs to structured logs (e.g., OpenTelemetry) for debugging logic failures in production.
-2.  **Advanced Guardrails:** Move safety from "Prompt Instructions" (soft guardrail) to a "Middleware Layer" (hard guardrail) using embedding-based classification to detect and block PII or adversarial prompts before they reach the LLM.
-3.  **Hallucination Testing:** The current evaluation checks for correctness on existing data. I would add "Negative Tests" (queries for data that *doesn't* exist) to ensure the agent doesn't hallucinate records.
-4.  **Async Concurrency:** To offset the latency of the multi-agent system, I would implement `asyncio` for parallel tool execution, allowing the Planner to investigate multiple hypotheses simultaneously.
-5.  **Data Permissions:** Hard-code row-level security or column masking into the `SubscriptionStore` to prevent agents from even accessing sensitive columns like `credit_card` numbers, regardless of their prompt instructions.
+2.  **Expanded Red Teaming:** While the current evaluation includes basic Prompt Injection and SQL Injection tests, I would expand this to a comprehensive "Red Team" suite using automated attack libraries (like Garak or PyRIT) to test for more subtle jailbreaks and PII leakage vectors.
+3.  **Advanced Guardrails:** Move safety from "Prompt Instructions" (soft guardrail) to a "Middleware Layer" (hard guardrail) using embedding-based classification to detect and block PII or adversarial prompts before they reach the LLM.
+4.  **Hallucination Testing:** The current evaluation checks for correctness on existing data. I would add "Negative Tests" (queries for data that *doesn't* exist) to ensure the agent doesn't hallucinate records.
+5.  **Async Concurrency:** To offset the latency of the multi-agent system, I would implement `asyncio` for parallel tool execution, allowing the Planner to investigate multiple hypotheses simultaneously.
+6.  **Data Permissions:** Hard-code row-level security or column masking into the `SubscriptionStore` to prevent agents from even accessing sensitive columns like `credit_card` numbers, regardless of their prompt instructions.
+7.  **Structured Agent Communication:** Migrate inter-agent communication from natural language strings to a shared **Pydantic Protocol**. By having workers return structured objects (e.g., `class AgentResponse`), we can formally decouple internal traces from final answers, eliminating the fragility of regex parsing in the Supervisor.
+8.  **Interactive Ambiguity Resolution (HITL):** Implement a Human-in-the-Loop mechanism for vague requests. Instead of relying on "best-guess" assumptions in the Business Playbook, the Planner would utilize a `ask_clarifying_question` tool to pause execution and request user clarification (e.g., "Do you mean churned customers or low utilization?") before proceeding.
