@@ -320,10 +320,10 @@ def create_agent_stack():
     co = cohere.ClientV2(api_key=COHERE_API_KEY)
     debug_mode = 'True' == os.environ.get("DEBUG_MODE", False)
 
-    # Store
+    # Initialize the Infrastructure (Database)
     store = SubscriptionStore("data/subscription_data.csv")
     
-    # Worker
+    # Initialize the Worker Aegnts (n=1 currently)
     worker = SubscriptionDataAssistantAgent(
         client=co, 
         model_id=MODEL_ID, 
@@ -332,7 +332,7 @@ def create_agent_stack():
         debug_mode=debug_mode
     )
     
-    # Team & Planner
+    # Create the Agent Team and give to the Planner Agent
     team = AgentTeam()
     team.register_agent("DataAnalyst", worker, "SQL Data Retrieval")
     planner = TaskPlannerAgent(

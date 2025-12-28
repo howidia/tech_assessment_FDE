@@ -67,7 +67,7 @@ class TaskPlannerAgent:
 
         step = 0
         while step < 15:
-            # --- 1. Think ---
+            # Generate initial response
             response = self.client.chat(
                 model=self.model_id,
                 messages=self.messages,
@@ -75,7 +75,7 @@ class TaskPlannerAgent:
             )
             self.messages.append(response.message)
 
-            # --- 2. Act ---
+            # Check for tool calls
             if response.message.tool_calls:
                 for tc in response.message.tool_calls:
                     tool_name = tc.function.name
@@ -98,7 +98,7 @@ class TaskPlannerAgent:
                 
                 step += 1
             else:
-                # If the model chatters without calling a tool, return that text
+                # If the model outputs without calling a tool, return that text
                 return response.message.content[0].text
         
         return "Error: specific task planner max steps reached."
@@ -121,14 +121,13 @@ class TaskPlannerAgent:
             print(f"  → [Planner] Delegating to '{agent_name}': {task}")
         
         try:
-            # 1. Get the agent from the team registry
+            # Get the agent from the team registry
             worker = self.team.get_agent(agent_name)
             
-            # 2. Run the agent (Blocking call)
-            # The worker does its own thinking and returns a string
+            # Run the agent, the worker does its own thinking and returns a string
             worker_response = worker.run(task)
             
-            # 3. Return the result to the Planner
+            # Return the result to the Planner
             return f"Agent '{agent_name}' reported: {worker_response}"
             
         except ValueError:
@@ -144,7 +143,6 @@ class TaskPlannerAgent:
             call_id (str): The unique ID of the tool call.
             output (str): The content/result to return to the model.
         """
-        """Helper to format the tool output for Cohere"""
         self.messages.append({
             "role": "tool",
             "tool_call_id": call_id,

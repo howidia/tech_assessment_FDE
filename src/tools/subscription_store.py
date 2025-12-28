@@ -44,7 +44,7 @@ class SubscriptionStore:
         """
         cursor = self.connection.cursor()
 
-        # 1. Define Schema
+        # Define Schema
         cursor.execute("""
             CREATE TABLE subscriptions (
                 subscription_id TEXT PRIMARY KEY,
@@ -69,7 +69,7 @@ class SubscriptionStore:
             )
         """)
 
-        # 2. Ingest Data
+        # Ingest Data
         try:
             with open(csv_path, 'r', encoding='utf-8') as f:
                 reader = csv.DictReader(f)
@@ -148,12 +148,12 @@ class SubscriptionStore:
             List[Dict[str, Any]]: A list of records resulting from the query,
             or a list containing an error dictionary if the query fails or is forbidden.
         """
-        # 1. Safety Block
+        # Safety block - banlist of words
         forbidden = ["DELETE", "DROP", "UPDATE", "INSERT", "ALTER"]
         if any(w in query.upper() for w in forbidden):
             return [{"error": "Security Alert: Read-only access."}]
 
-        # 2. Execution
+        # Execute otherwise
         try:
             cursor = self.connection.execute(query)
             return [dict(row) for row in cursor.fetchall()]

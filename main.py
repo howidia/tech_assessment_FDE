@@ -17,7 +17,7 @@ from src.agent_team import AgentTeam
 from config.agent_config import MODEL_ID
 
 def main():
-    # 0. Setup Environment
+    # Setup environment
     load_dotenv()
     if not os.environ.get("COHERE_API_KEY"):
         print("Error: COHERE_API_KEY not found in .env file.")
@@ -27,11 +27,11 @@ def main():
 
     co = cohere.ClientV2(api_key=os.environ["COHERE_API_KEY"])
     
-    # 1. Initialize the Infrastructure (Database)
+    # Initialize the Infrastructure (Database)
     print("Initializing Database...")
     store = SubscriptionStore("data/subscription_data.csv")
     
-    # 2. Initialize the Workers
+    # Initialize the Worker Aegnts (n=1 currently)
     data_agent = SubscriptionDataAssistantAgent(
         client=co,
         model_id=MODEL_ID,
@@ -40,7 +40,7 @@ def main():
         debug_mode=debug_mode
     )
 
-    # 3. Create the Team
+    # Create the Agent Team
     team = AgentTeam()
     team.register_agent(
         name="DataAnalyst",
@@ -48,7 +48,7 @@ def main():
         description="Can query the SQL database for revenue, churn, and subscription details."
     )
     
-    # 4. Initialize the Planner
+    # Initialize the Task Planner Agent
     planner = TaskPlannerAgent(
         client=co, 
         model_id=MODEL_ID, 
@@ -56,7 +56,7 @@ def main():
         debug_mode=debug_mode
     )
 
-    # 5. Interactive Loop
+    # Interactive Loop with User
     print("\n" + "="*50)
     print("🤖 Agent Team Ready. Type -1 to exit.")
     print("="*50 + "\n")
