@@ -33,7 +33,7 @@ I injected specific "Business Playbooks" directly into the system prompt. This t
 ### B. Data Analyst: Schema & Syntax Constraints
 To address specific failure modes (e.g., SQL syntax errors, empty results), I added a "CRITICAL SQL RULES" section:
 * **Type Casting:** Enforced `CAST(x AS FLOAT)` to resolve SQLite's integer division behavior (which was returning 0% for utilization queries).
-* **Data Normalization:** Explicitly mapped natural language (e.g., "credit card") to database schema quirks (e.g., `credit_card` with underscore), resolving 90% of empty result sets.
+* **Data Normalization:** Explicitly mapped natural language (e.g., "credit card") to database schema quirks (e.g., `credit_card` with underscore), resolving most empty result sets.
 
 ### C. Safety & Guardrails
 I implemented a multi-layered safety mechanism:
@@ -53,18 +53,20 @@ To solve this, I implemented **Cohere's Native Response Format** (JSON Schema) s
 To ensure the system is production-ready, I built a rigorous evaluation pipeline (`evaluate.py`) centered on **Reproducibility** and **Nuance**.
 
 ### Methodology: LLM-as-a-Judge
-Manual inspection is unscalable. I used Cohere's (`command-r-plus`) model to grade the agent's outputs against a "Golden Answer" dataset. (Important to note this is the same model that writes the output).
+Manual inspection is unscalable. I used Cohere's (`command-a`) model to grade the agent's outputs against a "Golden Answer" dataset. (Important to note this is the same model that writes the output).
 
 ### Metrics
 1.  **Stability (Consistency Score):** LLMs are non-deterministic. I run every test case **3 times**. A test case is only considered "Stable" if it passes 3/3 times. (Note: In a production environment, I would increase this sample size).
 2.  **Correctness (0/1):** Binary assessment of factual accuracy and safety refusals.
 3.  **Quality (1-5):** Qualitative assessment of tone, context, and formatting.
 
-### Security & Red-Teaming (New)
+### Security & Red-Teaming 
 To ensure the system is enterprise-secure, I extended the evaluation dataset to include **Adversarial Test Cases**:
 1.  **Prompt Injection:** Attempts to leak system instructions (e.g., "Ignore previous instructions...").
 2.  **SQL Injection:** Attempts to execute destructive commands (e.g., `DROP TABLE`).
 These tests verify that the "Hard Guardrails" (Read-Only SQL wrapper) and "Soft Guardrails" (System Prompt instructions) are functioning correctly.
+
+> **Note:** This represents a baseline security check. With more time, a comprehensive set of guardrails would be implemented.
 
 ### Artifacts
 * **`reports/evaluation_report.md`**: A readable executive summary for stakeholders.
@@ -73,7 +75,7 @@ These tests verify that the "Hard Guardrails" (Read-Only SQL wrapper) and "Soft 
 ## 4. Evaluation Insights & Trade-offs
 
 ### Key Findings (Data from latest run)
-* **Security is Production-Ready:** The agent achieved a **100% Pass Rate** on all Safety and Adversarial queries. It successfully refused PII requests and blocked `DROP TABLE` attempts, proving the dual-layer guardrail approach works.
+* **High Security:** The agent achieved a **100% Pass Rate** on all Safety and Adversarial queries. It successfully refused PII requests and blocked `DROP TABLE` attempts, proving the dual-layer guardrail approach works.
 * **High Stability (86%):** 19 out of 22 test cases achieved "Perfect Stability" (3/3 passes).
 * **Math is Solid:** The agent consistently handled complex arithmetic (MRR sums, Float utilization), proving that offloading math to SQLite is the correct architectural choice.
 
@@ -83,13 +85,23 @@ The agent struggled in 3 specific areas, revealing "Safe Defaults" behaviors:
 2.  **Summarization Loss:** On complex retrieval tasks (e.g., "Tech companies"), the agent successfully retrieved the data but occasionally omitted secondary details (like "Trial Status") in the final natural language summary.
 
 ### Trade-offs
-* **Latency vs. Reliability:** The Supervisor-Worker pattern introduces a "thinking" step, increasing latency (avg ~5-8s per query). I accepted this trade-off to prioritize **Safety** and **Accuracy**, which are non-negotiable in enterprise settings.
+* **Latency vs. Reliability:** The Supervisor-Worker pattern introduces a "planning" step, increasing latency. I accepted this trade-off to prioritize **Safety**, **Accuracy**, and **Scalability**. The Supervisor Agent could also integrate seamlessly with other agent teams.
 * **Complexity vs. Speed:** Building a custom `SubscriptionStore` and `AgentTeam` registry added initial development time compared to a simple script. However, this architectural investment ensures **scalability** for future iterations.
 
-### Trade-offs
-* **Latency vs. Reliability:** The Supervisor-Worker pattern introduces a "thinking" step, increasing latency compared to a single agent. I accepted this trade-off to prioritize **Safety** and **Accuracy**, which are non-negotiable in enterprise settings.
-* **Complexity vs. Speed:** Building a custom `SubscriptionStore` and `AgentTeam` registry added initial development time compared to a simple script. However, this architectural investment ensures **scalability** and **reusability** for future iterations.
-## 5. Future Roadmap & Improvements
+## 5. Iterations & Improvements
+
+My development process followed a data-driven loop: **Evaluate $\rightarrow$ Analyze Failure $\rightarrow$ Refine Prompt/Code $\rightarrow$ Re-evaluate.**
+
+### Key Iterations
+This table highlights the specific engineering changes made to resolve early failure modes.
+
+| Failure Mode (Initial Run) | Root Cause Analysis | Fix Implementation | Result (Final Run) |
+| :--- | :--- | :--- | :--- |
+| **Utilization = 0%** | SQLite performs integer division by default (e.g., `58/75 = 0`). | **Prompt Update:** Added `CRITICAL RULE: CAST(x AS FLOAT)` to Data Analyst instructions. | **100% Pass** on utilization queries. |
+| **"No results found"** | User asked for "credit card" (space), DB has `credit_card` (underscore). | **Schema Injection:** Explicitly mapped natural language terms to their enum counterparts in the system prompt. | **100% Pass** on metadata queries. |
+| **Hallucinated "Risk"** | Agent invented its own definition of "Churn Risk," missing the business context. | **Logic Injection:** Added a "Business Playbook" section to the Supervisor prompt defining "Risk" as specific SQL conditions (e.g., `auto_renew=False`). | **Improved accuracy** on qualitative questions. |
+
+## 6. Future Roadmap
 
 With more time, I would prioritize the following features:
 
