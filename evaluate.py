@@ -236,7 +236,7 @@ class AgentEvaluator:
             replications (int): The number of replications used.
         """
 
-        # --- PART 1: GENERATE RAW CSV DATA (Pandas Native Way) ---
+        # Generate raw csv
 
         # json_normalize automatically unrolls the 'details' list
         # and repeats the 'meta' fields for every row.
@@ -246,7 +246,7 @@ class AgentEvaluator:
             meta=['question', 'golden_answer', 'criteria', 'pass_rate', 'avg_quality', 'is_stable']
         )
 
-        # Rename the raw keys to your professional schema
+        # Rename the raw keys to professional schema
         df = df.rename(columns={
             'rep': 'replication_id',
             'answer': 'actual_answer',
@@ -258,8 +258,8 @@ class AgentEvaluator:
             'avg_quality': 'agg_avg_quality'
         })
 
-        # Reorder columns for readability (Context -> Data -> Metrics)
-        # Note: We must ensure all columns exist, so we select them explicitly
+        # Reorder columns for readability
+        # We must ensure all columns exist, so we select them explicitly
         column_order = [
             "question", "criteria", "golden_answer",
             "replication_id", "actual_answer", "judge_reasoning",
@@ -278,7 +278,7 @@ class AgentEvaluator:
         except Exception as e:
             print(f"Error saving CSV: {e}")
 
-        # --- PART 2: GENERATE MARKDOWN REPORT ---
+        # Generate markdown report
         total_questions = len(summaries)
         perfect_stability = sum(1 for s in summaries if s['is_stable'])
         avg_quality = sum(s['avg_quality'] for s in summaries) / total_questions
