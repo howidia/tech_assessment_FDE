@@ -14,13 +14,13 @@ Initial testing with a single monolithic agent revealed reliability issues when 
 
 * **Task Planner (Supervisor):**
     * **Role:** Strategic Orchestrator. It parses vague intent ("Risk", "Upsell") into concrete technical directives.
+    * **Scalability & Delegation:** The Planner is designed to select tools dynamically from an extensible `AgentTeam` registry. While currently configured with a single `DataAnalyst` for this MVP, this architecture allows for **zero-refactor scaling**. We can easily plug in new specialists (e.g., an "Auxiliary Research Agent") and the Planner will automatically discover and utilize them for relevant sub-tasks.
     * **Responsibility:** Enforces high-level guardrails (PII safety) and determines task completion.
     * **Output Strategy:** It filters the raw "Trace" from workers to provide only user-safe "Findings," ensuring internal logic doesn't leak to the end-user.
 
 * **Data Analyst (Worker):**
     * **Role:** Specialized Execution Unit.
     * **Responsibility:** Restricted strictly to SQL generation. It has no awareness of business strategy, only schema and syntax. This separation of concerns minimizes context pollution.
-
 ## 2. Prompt Engineering Strategy
 
 My strategy evolved from generic instruction to **Context-Aware Constraints** and **Logic Injection**.
