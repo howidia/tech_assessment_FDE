@@ -1,4 +1,4 @@
-# Cohere Forward Deployed Engineer Assessment
+# Cohere FDE Assessment - Ali Howidi
 
 ## 🚀 Overview
 
