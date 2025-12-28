@@ -1,5 +1,4 @@
 # Cohere Forward Deployed Engineer Assessment
-## Author *Ali Howidi*
 
 ## 🚀 Overview
 
