@@ -293,7 +293,7 @@ class AgentEvaluator:
             f.write("## Detailed Breakdown\n\n")
             
             for item in summaries:
-                icon = "🟢" if item['is_stable'] else "kT" if item['pass_rate'] > 0 else "🔴"
+                icon = "🟢" if item['is_stable'] else "🟡" if item['pass_rate'] > 0 else "🔴"
                 f.write(f"### {icon} {item['question']}\n")
                 f.write(f"**Pass Rate:** {item['pass_rate']:.0f}% | **Avg Quality:** {item['avg_quality']:.1f}/5\n\n")
                 f.write(f"**Criteria:** _{item['criteria']}_\n\n")
