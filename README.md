@@ -56,7 +56,7 @@ tech_assessment_FDE/
 ├── docs/                   # Documentation assets (architecture diagram)
 ├── reports/                # Generated Artifacts (Created on runtime)
 │   ├── evaluation_report.md      # Summary report of the last evaluation run
-│   └── evaluation_report.csv     # Raw row-level data for debugging
+│   └── evaluation_report.csv     # Raw row-level data for debugging (also last run)
 ├── src/                    # Source Code
 │   ├── agents/             # Agent logic (Planner & Data Analyst)
 │   ├── tools/              # SQLite Store & Tool implementations
@@ -154,6 +154,8 @@ After running `evaluate.py`, check the `reports/` folder:
 
 * **`evaluation_report.md`**: A clean, readable summary of Pass/Fail rates, Quality scores, and failure reasoning.
 * **`evaluation_report.csv`**: A detailed dataset containing every replication, duration metrics, and full judge reasoning. Use this for deep-dive analysis.
+
+Note: To see a sample of the last evaluation results, see the existing `evaluation_report.md` & `evaluation_report.csv` files in the `reports` directory.
 
 ---
 ## 🧠 Design Rationale & Analysis
