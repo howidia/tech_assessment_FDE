@@ -21,12 +21,12 @@ class SubscriptionDataAssistantAgent:
     the subscription store, and handles error reporting back to the LLM.
     """
     def __init__(
-        self, 
-        client: cohere.ClientV2, 
-        model_id: str, 
-        tools_json: List[Dict[str, Any]], 
+        self,
+        client: cohere.ClientV2,
+        model_id: str,
+        tools_json: List[Dict[str, Any]],
         functions_map: Dict[str, Callable],
-        system_prompt: str = SUBSCRIPTION_DATA_AGENT_SYSTEM_PROMPT, 
+        system_prompt: str = SUBSCRIPTION_DATA_AGENT_SYSTEM_PROMPT,
         max_steps: int = 8,
         debug_mode: bool = False
     ):
@@ -49,7 +49,7 @@ class SubscriptionDataAssistantAgent:
         self.functions_map = functions_map
         self.max_steps = max_steps
         self.debug_mode = debug_mode
-        
+
         self.messages = [{"role": "system", "content": self.system_prompt}]
 
     def run(self, user_query: str) -> str:
@@ -138,7 +138,7 @@ class SubscriptionDataAssistantAgent:
                 {
                     "type": "document",
                     "document": {"data": json.dumps(item, default=str)}
-                } 
+                }
                 for item in data_list
             ]
         })
@@ -158,7 +158,7 @@ class SubscriptionDataAssistantAgent:
             "role": "tool",
             "tool_call_id": tool_call_id,
             "content": [{
-                "type": "document", 
+                "type": "document",
                 "document": {"data": json.dumps({"error": error_msg})}
             }]
         })

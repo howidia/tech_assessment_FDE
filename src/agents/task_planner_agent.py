@@ -24,9 +24,9 @@ class TaskPlannerAgent:
     """
 
     def __init__(
-        self, 
-        client: cohere.ClientV2, 
-        team: AgentTeam, 
+        self,
+        client: cohere.ClientV2,
+        team: AgentTeam,
         model_id: str,
         system_prompt_template: str = TASK_PLANNER_SYSTEM_PROMPT,  # Default to config
         debug_mode: bool = False
@@ -71,7 +71,7 @@ class TaskPlannerAgent:
             response = self.client.chat(
                 model=self.model_id,
                 messages=self.messages,
-                tools=TASK_PLANNER_TOOLS_JSON 
+                tools=TASK_PLANNER_TOOLS_JSON
             )
             self.messages.append(response.message)
 
@@ -84,14 +84,14 @@ class TaskPlannerAgent:
                     # Termination Case: This must be checked explicitly to break the loop
                     if tool_name == "terminate_workflow":
                         # Before we return, otherwise the API history breaks on the next turn
-                        self._submit_tool_output(tc.id, "Workflow Completed.")  
+                        self._submit_tool_output(tc.id, "Workflow Completed.")
                         return args["final_report"]
 
                     # Standard case: Delegation
                     if tool_name == "delegate_task":
                         # We call the internal implementation
                         result = self._execute_delegation(
-                            agent_name=args["agent_name"], 
+                            agent_name=args["agent_name"],
                             task=args["task"]
                         )
                         self._submit_tool_output(tc.id, result)
